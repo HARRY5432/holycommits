@@ -11,6 +11,17 @@ const REPO_DIR = path.join(process.cwd(), 'tinybert-repo');
 
 app.use(express.json());
 
+// Resolve a user-supplied repo-relative path to an absolute path,
+// blocking any traversal outside the repository directory.
+function resolveRepoPath(filePath: string): { absolutePath: string; safePath: string } {
+  const safePath = path.normalize(filePath).replace(/^(\\.\\.[\\/\\\\])+/, '');
+  const absolutePath = path.join(REPO_DIR, safePath);
+  if (!absolutePath.startsWith(REPO_DIR)) {
+    throw new Error('Access denied: Path outside repo.');
+  }
+  return { absolutePath, safePath };
+}
+
 // Initialize Gemini Client lazily or safely
 function getGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -76,12 +87,7 @@ app.get('/api/repo/file', async (req, res) => {
       return res.status(400).json({ error: 'Path query param required.' });
     }
 
-    const safePath = path.normalize(filePath).replace(/^(\.\.[\/\\])+/, '');
-    const absolutePath = path.join(REPO_DIR, safePath);
-
-    if (!absolutePath.startsWith(REPO_DIR)) {
-      return res.status(403).json({ error: 'Access denied: Path outside repo.' });
-    }
+    const { absolutePath, safePath } = resolveRepoPath(filePath);
 
     if (!existsSync(absolutePath)) {
       return res.status(404).json({ error: 'File not found.' });
@@ -102,12 +108,7 @@ app.post('/api/repo/save-file', async (req, res) => {
       return res.status(400).json({ error: 'Path and content required.' });
     }
 
-    const safePath = path.normalize(filePath).replace(/^(\.\.[\/\\])+/, '');
-    const absolutePath = path.join(REPO_DIR, safePath);
-
-    if (!absolutePath.startsWith(REPO_DIR)) {
-      return res.status(403).json({ error: 'Access denied: Path outside repo.' });
-    }
+    const { absolutePath } = resolveRepoPath(filePath);
 
     await fs.writeFile(absolutePath, content, 'utf-8');
     res.json({ success: true, message: 'File saved successfully.' });
@@ -259,8 +260,7 @@ app.post('/api/ai/refactor', async (req, res) => {
     const { filePath, feature } = req.body;
     const ai = getGeminiClient();
 
-    const safePath = path.normalize(filePath).replace(/^(\.\.[\/\\])+/, '');
-    const absolutePath = path.join(REPO_DIR, safePath);
+    const { absolutePath } = resolveRepoPath(filePath);
 
     if (!existsSync(absolutePath)) {
       return res.status(404).json({ error: 'File not found' });
