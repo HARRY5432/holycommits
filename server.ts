@@ -22,13 +22,19 @@ function resolveRepoPath(filePath: string): { absolutePath: string; safePath: st
   return { absolutePath, safePath };
 }
 
-// Initialize Gemini Client lazily or safely
+// Initialize Gemini Client lazily or safely.
+// The client instance is cached so it is not re-created on every request.
+let cachedGeminiClient: GoogleGenAI | null = null;
 function getGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') {
+    cachedGeminiClient = null;
     return null;
   }
-  return new GoogleGenAI({ apiKey });
+  if (!cachedGeminiClient) {
+    cachedGeminiClient = new GoogleGenAI({ apiKey });
+  }
+  return cachedGeminiClient;
 }
 
 // API Route: List repository files
