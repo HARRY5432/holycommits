@@ -205,15 +205,18 @@ const execAsync = promisify(exec);
 
 app.get('/api/git/status', async (req, res) => {
   try {
-    const { stdout: statusOut } = await execAsync('git status -s', { cwd: REPO_DIR });
-    const { stdout: branchOut } = await execAsync('git rev-parse --abbrev-ref HEAD', { cwd: REPO_DIR });
-    const { stdout: logOut } = await execAsync('git log -n 5 --oneline', { cwd: REPO_DIR });
+    // Run independent git queries in parallel to cut down total latency.
+    const [statusRes, branchRes, logRes] = await Promise.all([
+      execAsync('git status -s', { cwd: REPO_DIR }),
+      execAsync('git rev-parse --abbrev-ref HEAD', { cwd: REPO_DIR }),
+      execAsync('git log -n 5 --oneline', { cwd: REPO_DIR }),
+    ]);
 
     res.json({
       success: true,
-      branch: branchOut.trim(),
-      changes: statusOut.split('\n').filter(Boolean),
-      recentCommits: logOut.split('\n').filter(Boolean)
+      branch: branchRes.stdout.trim(),
+      changes: statusRes.stdout.split('\n').filter(Boolean),
+      recentCommits: logRes.stdout.split('\n').filter(Boolean)
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
