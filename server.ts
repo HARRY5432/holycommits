@@ -46,31 +46,34 @@ app.get('/api/repo/files', async (req, res) => {
 
     async function scanDir(dir: string, baseRelative = ''): Promise<any[]> {
       const entries = await fs.readdir(dir, { withFileTypes: true });
-      const items = [];
 
-      for (const entry of entries) {
-        if (entry.name === '.git' || entry.name === '__pycache__') continue;
-        const fullPath = path.join(dir, entry.name);
-        const relPath = path.join(baseRelative, entry.name);
+      // Process every entry concurrently so stat calls overlap.
+      const items = (
+        await Promise.all(
+          entries.map(async (entry) => {
+            if (entry.name === '.git' || entry.name === '__pycache__') return null;
+            const fullPath = path.join(dir, entry.name);
+            const relPath = path.join(baseRelative, entry.name);
 
-        if (entry.isDirectory()) {
-          const children = await scanDir(fullPath, relPath);
-          items.push({
-            name: entry.name,
-            path: relPath,
-            type: 'directory',
-            children,
-          });
-        } else {
-          const stats = await fs.stat(fullPath);
-          items.push({
-            name: entry.name,
-            path: relPath,
-            type: 'file',
-            size: stats.size,
-          });
-        }
-      }
+            if (entry.isDirectory()) {
+              return {
+                name: entry.name,
+                path: relPath,
+                type: 'directory',
+                children: await scanDir(fullPath, relPath),
+              };
+            }
+
+            const stats = await fs.stat(fullPath);
+            return {
+              name: entry.name,
+              path: relPath,
+              type: 'file',
+              size: stats.size,
+            };
+          }),
+        )
+      ).filter(Boolean);
 
       return items.sort((a, b) => {
         if (a.type === b.type) return a.name.localeCompare(b.name);
