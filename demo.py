@@ -1,12 +1,10 @@
 # HolyCommits Demo Program
 # TinyBERT & Neural Model Utility Script
 
-import math
-import time
-
 def calculate_distillation_loss(teacher_logits, student_logits, temperature=1.0):
     """
-    Calculates Kullback-Leibler Divergence for logit distillation.
+    Calculates a distillation loss term between teacher and student logits
+    using mean squared error over aligned logits.
     """
     print(f"🔥 Computing logit distillation with T={temperature}...")
     loss = sum((t - s) ** 2 for t, s in zip(teacher_logits, student_logits)) / len(teacher_logits)
