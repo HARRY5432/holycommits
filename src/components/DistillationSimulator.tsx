@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Play, 
   Pause, 
@@ -78,13 +78,15 @@ export const DistillationSimulator: React.FC = () => {
     return () => clearInterval(timer);
   }, [isPlaying, epoch, stage, totalEpochs]);
 
-  // Layer mapping calculation g(m)
-  const teacherLayers = 12;
-  const layerRatio = teacherLayers / studentLayers;
-  const layerMappings = Array.from({ length: studentLayers }, (_, i) => ({
-    studentIdx: i + 1,
-    teacherIdx: Math.round((i + 1) * layerRatio),
-  }));
+  // Layer mapping calculation g(m) — memoized since it only depends on layer count.
+  const layerMappings = useMemo(() => {
+    const teacherLayers = 12;
+    const layerRatio = teacherLayers / studentLayers;
+    return Array.from({ length: studentLayers }, (_, i) => ({
+      studentIdx: i + 1,
+      teacherIdx: Math.round((i + 1) * layerRatio),
+    }));
+  }, [studentLayers]);
 
   const currentLoss = lossHistory[lossHistory.length - 1] || {
     lossAttn: 1.48,
