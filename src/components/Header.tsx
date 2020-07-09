@@ -17,17 +17,18 @@ interface HeaderProps {
   setActiveTab: (tab: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
-  const tabs = [
-    { id: 'simulator', label: 'Distillation Pipeline', icon: Cpu, badge: 'Live Sim' },
-    { id: 'benchmark', label: 'GLUE Benchmark', icon: BarChart3, badge: '9.4x Speed' },
-    { id: 'repo', label: 'Code Explorer', icon: Code2, badge: 'PyTorch' },
-    { id: 'inference', label: 'Inference Visualizer', icon: Zap },
-    { id: 'cli', label: 'CLI Generator', icon: Terminal },
-    { id: 'ai', label: 'AI Model Advisor', icon: Bot, badge: 'Gemini 2.5' },
-    { id: 'git', label: 'Git Commit & Push', icon: GitBranch, badge: 'Deploy' },
-  ];
+// Hoisted to module scope so the array is created once instead of on every render.
+const TABS = [
+  { id: 'simulator', label: 'Distillation Pipeline', icon: Cpu, badge: 'Live Sim' },
+  { id: 'benchmark', label: 'GLUE Benchmark', icon: BarChart3, badge: '9.4x Speed' },
+  { id: 'repo', label: 'Code Explorer', icon: Code2, badge: 'PyTorch' },
+  { id: 'inference', label: 'Inference Visualizer', icon: Zap },
+  { id: 'cli', label: 'CLI Generator', icon: Terminal },
+  { id: 'ai', label: 'AI Model Advisor', icon: Bot, badge: 'Gemini 2.5' },
+  { id: 'git', label: 'Git Commit & Push', icon: GitBranch, badge: 'Deploy' },
+];
 
+export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
   return (
     <header id="app-header" className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 text-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
 
         {/* Tab Navigation */}
         <div className="flex space-x-1 overflow-x-auto no-scrollbar py-2 border-t border-slate-800/80">
-          {tabs.map((tab) => {
+          {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
