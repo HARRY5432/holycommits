@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Terminal, 
   Copy, 
@@ -10,6 +10,14 @@ import {
   Code2,
   Sparkles
 } from 'lucide-react';
+
+// Hoisted to module scope so the list is created once instead of on every render.
+const SCRIPT_OPTIONS = [
+  { id: 'task_distill.py', name: 'Task Distillation', desc: 'Intermediate & prediction layer' },
+  { id: 'general_distill.py', name: 'General Distill', desc: 'Pre-training transformer distillation' },
+  { id: 'data_augmentation.py', name: 'Data Augmentation', desc: 'BERT + GloVe word replacement' },
+  { id: 'pregenerate_training_data.py', name: 'Pregenerate Data', desc: 'Corpus JSON preprocessing' },
+];
 
 export const CliGenerator: React.FC = () => {
   const [script, setScript] = useState<string>('task_distill.py');
@@ -26,7 +34,11 @@ export const CliGenerator: React.FC = () => {
   const [dryRunLogs, setDryRunLogs] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState<boolean>(false);
 
-  const generatedCommand = `python ${script} ${predDistill ? '--pred_distill ' : ''}--teacher_model \${FT_BERT_BASE_DIR}\$ --student_model \${GENERAL_TINYBERT_DIR}\$ --data_dir \${TASK_DIR}\$ --task_name ${taskName} --output_dir \${TINYBERT_DIR}\$ --max_seq_length ${maxSeqLength} --train_batch_size ${batchSize} --num_train_epochs ${epoch} --learning_rate ${lr} ${augTrain ? '--aug_train ' : ''}${doLower ? '--do_lower_case' : ''}`;
+  // Only rebuilt when one of its inputs actually changes.
+  const generatedCommand = useMemo(
+    () => `python ${script} ${predDistill ? '--pred_distill ' : ''}--teacher_model \${FT_BERT_BASE_DIR}\$ --student_model \${GENERAL_TINYBERT_DIR}\$ --data_dir \${TASK_DIR}\$ --task_name ${taskName} --output_dir \${TINYBERT_DIR}\$ --max_seq_length ${maxSeqLength} --train_batch_size ${batchSize} --num_train_epochs ${epoch} --learning_rate ${lr} ${augTrain ? '--aug_train ' : ''}${doLower ? '--do_lower_case' : ''}`,
+    [script, predDistill, taskName, maxSeqLength, batchSize, epoch, lr, augTrain, doLower],
+  );
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedCommand);
@@ -85,12 +97,7 @@ export const CliGenerator: React.FC = () => {
 
         {/* Script Selector */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-6">
-          {[
-            { id: 'task_distill.py', name: 'Task Distillation', desc: 'Intermediate & prediction layer' },
-            { id: 'general_distill.py', name: 'General Distill', desc: 'Pre-training transformer distillation' },
-            { id: 'data_augmentation.py', name: 'Data Augmentation', desc: 'BERT + GloVe word replacement' },
-            { id: 'pregenerate_training_data.py', name: 'Pregenerate Data', desc: 'Corpus JSON preprocessing' },
-          ].map((s) => (
+          {SCRIPT_OPTIONS.map((s) => (
             <button
               key={s.id}
               id={`script-select-${s.id}`}
