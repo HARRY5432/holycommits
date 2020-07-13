@@ -9,6 +9,17 @@ import { AiAdvisor } from './components/AiAdvisor';
 import { GitPushPanel } from './components/GitPushPanel';
 import { GitBranch } from 'lucide-react';
 
+// Static tab → view mapping so rendering a tab is a single lookup.
+const TAB_VIEWS: Record<string, React.ReactNode> = {
+  simulator: <DistillationSimulator />,
+  benchmark: <GlueBenchmarkExplorer />,
+  repo: <RepoExplorer />,
+  inference: <InferenceVisualizer />,
+  cli: <CliGenerator />,
+  ai: <AiAdvisor />,
+  git: <GitPushPanel />,
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('simulator');
 
@@ -19,13 +30,7 @@ export default function App() {
 
       {/* Main View Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {activeTab === 'simulator' && <DistillationSimulator />}
-        {activeTab === 'benchmark' && <GlueBenchmarkExplorer />}
-        {activeTab === 'repo' && <RepoExplorer />}
-        {activeTab === 'inference' && <InferenceVisualizer />}
-        {activeTab === 'cli' && <CliGenerator />}
-        {activeTab === 'ai' && <AiAdvisor />}
-        {activeTab === 'git' && <GitPushPanel />}
+        {TAB_VIEWS[activeTab] ?? null}
       </main>
 
       {/* Persistent Bottom Bar for Git & Repository Link */}
