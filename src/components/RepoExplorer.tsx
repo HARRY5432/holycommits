@@ -147,6 +147,26 @@ export const RepoExplorer: React.FC = () => {
     });
   };
 
+  // Recursively keep only entries whose name matches the search term.
+  const filterFiles = (items: RepoItem[]): RepoItem[] => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return items;
+
+    const matches: RepoItem[] = [];
+    for (const item of items) {
+      if (item.type === 'directory') {
+        const children = filterFiles(item.children || []);
+        if (children.length > 0) {
+          matches.push({ ...item, children });
+        }
+      } else if (item.name.toLowerCase().includes(term)) {
+        matches.push(item);
+      }
+    }
+    return matches;
+  };
+
+  const visibleFiles = filterFiles(files);
   const isModified = content !== originalContent;
 
   return (
@@ -182,7 +202,11 @@ export const RepoExplorer: React.FC = () => {
 
         {/* Tree Container */}
         <div className="mt-3 flex-1 overflow-y-auto space-y-1 pr-1">
-          {files.length > 0 ? renderFileTree(files) : (
+          {files.length > 0 ? (
+            visibleFiles.length > 0 ? renderFileTree(visibleFiles) : (
+              <div className="text-xs text-slate-500 p-3 text-center">No files match "{searchTerm}".</div>
+            )
+          ) : (
             <div className="text-xs text-slate-500 p-3 text-center">Loading repo tree...</div>
           )}
         </div>
